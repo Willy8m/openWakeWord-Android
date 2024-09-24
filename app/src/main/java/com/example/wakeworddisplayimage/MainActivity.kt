@@ -20,6 +20,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -37,7 +38,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.focusModifier
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import com.example.wakeworddisplayimage.ui.theme.WakeWordDisplayImageTheme
 import java.io.FileOutputStream
@@ -135,18 +138,17 @@ class MainActivity : ComponentActivity() {
 //                            modifier = Modifier)
 //                    }
 //
-//                    Button (onClick = {
-//                        audioRecorder.startRecordingToFile()
-//                        Handler(Looper.getMainLooper()).postDelayed({
-//                            audioRecorder.stopRecordingToFile()
-//                        }, 1 * 1000)
-//                    }){
-//                        Text(text = "Record Sample Audio")
-//                    }
-//
-//                    Button(onClick = { audioRecorder.startListeningForKeyword() }) {
-//                        Text(text = "Start Listening For Keyword")
-//                    }
+                    Button (modifier = Modifier.padding(horizontal = 48.dp).padding(vertical = 48.dp),
+                        onClick = {
+                        audioRecorder.startRecordingToFile()
+                        Handler(Looper.getMainLooper()).postDelayed({
+                            audioRecorder.stopRecordingToFile()
+                        }, 1 * 1000)
+                    }){
+                        Text(text = "Record Sample Audio",
+                            fontSize = 30.sp,
+                            modifier = Modifier.padding(horizontal = 8.dp).padding(vertical = 8.dp))
+                    }
 
                     audioRecorder.startListeningForKeyword()
 
@@ -192,8 +194,17 @@ fun MyKeywordCount(context: MainActivity, viewModel: MainViewModel, modifier: Mo
     }
     Column {
         Text(
-            text = "Keyword count: $keywordCount",
-            modifier = Modifier.padding(horizontal = 8.dp))
+            text = "Keyword count",
+            fontSize = 30.sp,
+            modifier = modifier
+                .padding(horizontal = 8.dp))
+        Text(
+            text = "$keywordCount",
+            fontSize = 60.sp,
+            modifier = modifier
+                .padding(horizontal = 8.dp)
+                .align(alignment = Alignment.CenterHorizontally)
+        )
     }
 }
 
@@ -210,7 +221,7 @@ fun MyScore(context: MainActivity, viewModel: MainViewModel, modifier: Modifier)
             for (score in predictionScores!!) {
                 Text(
                     text = "Prediction score: $score",
-                    modifier = Modifier.padding(horizontal = 8.dp)
+                    modifier = modifier.padding(horizontal = 8.dp)
                 )
             }
         }

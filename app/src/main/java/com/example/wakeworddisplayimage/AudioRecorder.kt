@@ -13,7 +13,7 @@ import android.widget.Toast
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
-import com.example.wakeworddisplayimage.ml.ModelV10
+import com.example.wakeworddisplayimage.ml.ModelV11
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -35,7 +35,7 @@ class AudioRecorder(private val context: MainActivity, private val viewModel: Ma
 
     private var isListening = true
     private var isRecording = false
-    private lateinit var model : ModelV10
+    private lateinit var model : ModelV11
     private lateinit var audioRecord: AudioRecord
     private val sampleRate = 16000 // Sample rate in Hz
     private val channel = AudioFormat.CHANNEL_IN_MONO
@@ -47,7 +47,7 @@ class AudioRecorder(private val context: MainActivity, private val viewModel: Ma
     private var audioFromStorageData = ByteArray(bufferSize16bit)
     private var inputBuffer = ByteBuffer.allocateDirect(16000 * 4).order(ByteOrder.nativeOrder())
     private val scoreQueue = LinkedList<Float>()
-    private val maxSize = 10
+    private val maxSize = 7
 
     private val requestPermissionLauncher: ActivityResultLauncher<String> =
         context.registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted: Boolean ->
@@ -57,6 +57,15 @@ class AudioRecorder(private val context: MainActivity, private val viewModel: Ma
                 Toast.makeText(context, "Permission is required", Toast.LENGTH_SHORT).show()
             }
         }
+
+    fun initializeModel() {
+        try {
+            model = ModelV11.newInstance(context)
+        } catch (ex : Exception) {
+            Toast.makeText(context, "Failed to load model", Toast.LENGTH_SHORT).show()
+            throw ex
+        }
+    }
 
     // Function to add a new score and compute the average
     fun addScore(newScore: Float): Float {
@@ -151,11 +160,8 @@ class AudioRecorder(private val context: MainActivity, private val viewModel: Ma
 //    }
 
     fun startListeningForKeyword() {
-        val minBufferSize = AudioRecord.getMinBufferSize(
-            sampleRate,
-            AudioFormat.CHANNEL_IN_MONO,
-            AudioFormat.ENCODING_PCM_16BIT
-        )
+        //val minBufferSize = 2000
+        val minBufferSize = AudioRecord.getMinBufferSize(sampleRate, channel, encoding)
 
         audioRecord = AudioRecord(
             MediaRecorder.AudioSource.MIC,
@@ -173,8 +179,9 @@ class AudioRecorder(private val context: MainActivity, private val viewModel: Ma
 
         audioRecord.startRecording()
         val audioBuffer = ShortArray(minBufferSize / 2) // or use a bufferSize larger if needed
-        var patience = 0
 
+        var patience = 0
+        val mediaPlayer = MediaPlayer.create(context, R.raw.ping_sound)
         scope.launch {
             while (isListening) {
                 val bytesRead = audioRecord.read(audioBuffer, 0, audioBuffer.size)
@@ -187,15 +194,20 @@ class AudioRecorder(private val context: MainActivity, private val viewModel: Ma
                     val confidence = prediction.floatArray
                     val averagedConfidence = addScore(confidence[1])
 
-                    if (averagedConfidence > 0.8 && patience == 0) {
+                    if (averagedConfidence > 0.9 && patience == 0) {
                         Log.d("MODEL", "Detected Keyword! Confidence $averagedConfidence")
-                        val mediaPlayer = MediaPlayer.create(context, R.raw.ping_sound)
+                        //Toast.makeText(context, "Detected Keyword! Confidence $averagedConfidence", Toast.LENGTH_SHORT).show()
+
+                        if (mediaPlayer.isPlaying) {
+                            mediaPlayer.stop()
+                            mediaPlayer.prepare() // Reset the player to prepare for next sound
+                        }
                         mediaPlayer.start()
+
                         withContext(Dispatchers.Main) {
-//                            viewModel.updatePredictionScore(confidence)
                             viewModel.updateKeywordCount()
                         }
-                        patience += 5
+                        patience += 48
                     } else if (patience > 0) {
                         patience -= 1
                     }
@@ -231,15 +243,6 @@ class AudioRecorder(private val context: MainActivity, private val viewModel: Ma
         } else {
             Toast.makeText(context, "Audio permission required", Toast.LENGTH_SHORT).show()
             requestPermissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
-        }
-    }
-
-    fun initializeModel() {
-        try {
-            model = ModelV10.newInstance(context)
-        } catch (ex : Exception) {
-            Toast.makeText(context, "Failed to load model", Toast.LENGTH_SHORT).show()
-            throw ex
         }
     }
 

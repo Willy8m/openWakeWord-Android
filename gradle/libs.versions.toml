@@ -9,6 +9,7 @@ espressoCore = "3.6.1"
 lifecycleRuntimeKtx = "2.8.4"
 activityCompose = "1.9.1"
 composeBom = "2024.04.01"
+navigationCompose = "2.8.0"
 tensorflowLite = "2.16.1"
 tensorflowLiteGpu = "2.14.0"
 tensorflowLiteSupport = "0.1.0"
@@ -21,6 +22,7 @@ tensorflowLiteVersion = "2.14.0"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
+androidx-navigation-compose = { module = "androidx.navigation:navigation-compose", version.ref = "navigationCompose" }
 jtransforms = { module = "com.github.wendykierp:JTransforms", version.ref = "jtransforms" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }
