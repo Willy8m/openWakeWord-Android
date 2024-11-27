@@ -1,16 +1,8 @@
 package com.example.wakeworddisplayimage
 
-import android.graphics.Bitmap
-import android.graphics.BitmapFactory
-import android.media.MediaRecorder
-import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
-import org.tensorflow.lite.DataType
-import org.tensorflow.lite.support.tensorbuffer.TensorBuffer
-import java.io.IOException
-import java.nio.ByteBuffer
 
 class MainViewModel : ViewModel() {
 
@@ -21,10 +13,10 @@ class MainViewModel : ViewModel() {
         _predictionScores.value = predictionScores
     }
 
-    private var _keywordCount: MutableLiveData<Int> = MutableLiveData<Int>(0)
-    val keywordCount: LiveData<Int> = _keywordCount
+    private var _wakewordCount: MutableLiveData<Int> = MutableLiveData<Int>(0)
+    val wakewordCount: LiveData<Int> = _wakewordCount
 
-    fun updateKeywordCount() {
-        _keywordCount.value = _keywordCount.value?.plus(1)
+    fun addCount() {
+        _wakewordCount.value = _wakewordCount.value?.plus(1)
     }
 }

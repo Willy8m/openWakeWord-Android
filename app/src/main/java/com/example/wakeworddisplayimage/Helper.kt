@@ -1,7 +1,9 @@
 package com.example.wakeworddisplayimage
 
+import java.io.File
+import java.nio.ByteBuffer
+import java.nio.ByteOrder
 import android.Manifest
-import android.annotation.SuppressLint
 import android.content.pm.PackageManager
 import android.media.AudioFormat
 import android.media.AudioRecord
@@ -20,16 +22,58 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.tensorflow.lite.DataType
 import org.tensorflow.lite.support.tensorbuffer.TensorBuffer
-import java.io.File
 import java.io.FileInputStream
 import java.io.FileOutputStream
-import java.nio.ByteBuffer
-import java.nio.ByteOrder
 import java.nio.channels.FileChannel
 import java.util.LinkedList
 
+class Helper {
 
-class AudioRecorder(private val context: MainActivity, private val viewModel: MainViewModel) {
+    private fun Short.toByteArray(): ByteArray {
+        return byteArrayOf(
+            (this.toInt() and 0xFF).toByte(),         // Low byte
+            ((this.toInt() shr 8) and 0xFF).toByte()  // High byte
+        )
+    }
+
+    fun saveAsNpy(filePath: String, array: FloatArray) {
+        val shape = intArrayOf(array.size) // 1D array shape
+        val file = File(filePath)
+
+        file.outputStream().use { outputStream ->
+            // Write the header for the .npy format
+            val header = """
+            |{'descr': '<f4', 'fortran_order': False, 'shape': (${shape[0]},), }
+        """.trimMargin().replace("'", "\"")
+            val headerBytes = header.toByteArray()
+            val padding = ByteArray(16 - (10 + headerBytes.size % 16)) { ' '.code.toByte() }
+            val fullHeader = byteArrayOf(0x93.toByte()) + "NUMPY".toByteArray() +
+                    byteArrayOf(1, 0) + (headerBytes.size + padding.size).toShort().toByteArray() +
+                    headerBytes + padding
+
+            outputStream.write(fullHeader)
+
+            // Write the array data
+            val byteBuffer = ByteBuffer.allocate(array.size * 4)
+                .order(ByteOrder.LITTLE_ENDIAN) // NumPy expects little-endian
+            for (value in array) {
+                byteBuffer.putFloat(value)
+            }
+            outputStream.write(byteBuffer.array())
+        }
+    }
+
+}
+
+class WakeWordFromScratchVersion(private val context: MainActivity, private val viewModel: MainViewModel) {
+
+    /**
+     * Version preserved for legacy:
+     *
+     * This version of the model was coded for a custom I/O model which receives the full audio as input
+     * and predicts if there is a Wake Word present. It is included in this file to keep the project
+     * directories easier to navigate.
+     * */
 
     private val scope = CoroutineScope(Dispatchers.IO) // Scope for background tasks
 
@@ -157,7 +201,7 @@ class AudioRecorder(private val context: MainActivity, private val viewModel: Ma
                         mediaPlayer.start()
 
                         withContext(Dispatchers.Main) {
-                            viewModel.updateKeywordCount()
+                            viewModel.addCount()
                         }
                         patience += 48
                     } else if (patience > 0) {

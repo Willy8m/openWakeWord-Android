@@ -58,9 +58,6 @@ class MainActivity : ComponentActivity() {
         val openWakeWord = OpenWakeWord(this@MainActivity, viewModel)
         openWakeWord.startListeningForKeyword()
 
-        //val audioRecorder = AudioRecorder(this@MainActivity, viewModel)
-        //audioRecorder.startListeningForKeyword()
-
         enableEdgeToEdge()
         setContent {
             WakeWordDisplayImageTheme {
@@ -93,7 +90,7 @@ fun MyKeywordCount(context: MainActivity, viewModel: MainViewModel, modifier: Mo
     var keywordCount by remember {
         mutableIntStateOf(0)
     }
-    viewModel.keywordCount.observe(context) {
+    viewModel.wakewordCount.observe(context) {
         keywordCount = it
     }
     Column {
