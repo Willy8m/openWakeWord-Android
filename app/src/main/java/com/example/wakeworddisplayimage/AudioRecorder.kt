@@ -108,58 +108,8 @@ class AudioRecorder(private val context: MainActivity, private val viewModel: Ma
         return true
     }
 
-//    @SuppressLint("MissingPermission")
-//    fun startListeningForKeyword() {
-//        val bufferSize = AudioRecord.getMinBufferSize(
-//            sampleRate,
-//            AudioFormat.CHANNEL_IN_MONO,
-//            AudioFormat.ENCODING_PCM_16BIT
-//        )
-//
-//        audioRecord = AudioRecord(
-//            MediaRecorder.AudioSource.MIC,
-//            sampleRate,
-//            AudioFormat.CHANNEL_IN_MONO,
-//            AudioFormat.ENCODING_PCM_16BIT,
-//            bufferSize
-//        )
-//
-//        val state = audioRecord.state
-//        if (state != AudioRecord.STATE_INITIALIZED) {
-//            Log.e("AudioRecord", "AudioRecord initialization failed")
-//        }
-//
-//        audioRecord.startRecording()
-//        val audioBuffer = ShortArray(bufferSize / 2) // To hold audio data in 16-bit format
-//
-//        scope.launch {
-//            while (isListening) {
-//                audioRecord.read(audioBuffer, 0, audioBuffer.size)
-//
-//                val newAudioData = preprocessAudio(audioBuffer)
-//
-//                val temp = isBufferZeroed(newAudioData)
-//                if (temp) {
-//                    Log.d("Buffer", "Buffer is empty")
-//                }
-//
-//                updateBuffer(newAudioData)
-//
-//                val prediction = modelProcessing(inputBuffer)
-//                val confidence = prediction.floatArray
-//                // Update UI on the main thread
-//                withContext(Dispatchers.Main) {
-//                    viewModel.updatePredictionScore(confidence)
-//                }
-//                if (confidence[1] > 0.5) {
-//                    Log.d("MODEL", "Confidence ${confidence[1]}")
-//                    Log.d("MODEL", "ByteBuffer size: ${inputBuffer.capacity()}")
-//                }
-//            }
-//        }.start()
-//    }
-
     fun startListeningForKeyword() {
+        initializeModel()
         //val minBufferSize = 2000
         val minBufferSize = AudioRecord.getMinBufferSize(sampleRate, channel, encoding)
 
@@ -184,7 +134,9 @@ class AudioRecorder(private val context: MainActivity, private val viewModel: Ma
         val mediaPlayer = MediaPlayer.create(context, R.raw.ping_sound)
         scope.launch {
             while (isListening) {
-                val bytesRead = audioRecord.read(audioBuffer, 0, audioBuffer.size)
+//                val bytesRead = audioRecord.read(audioBuffer, 0, audioBuffer.size)
+
+                val bytesRead = audioRecord.read(audioBuffer, 0, audioBuffer.size, AudioRecord.READ_BLOCKING)
 
                 if (bytesRead > 0) {
                     val newAudioData = preprocessAudio(audioBuffer)

@@ -18,6 +18,9 @@ android {
         vectorDrawables {
             useSupportLibrary = true
         }
+        ndk {
+            abiFilters.addAll(listOf("arm64-v8a"))
+        }
     }
 
     buildTypes {
@@ -27,6 +30,21 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+        }
+    }
+
+    sourceSets {
+        getByName("main") {
+            jniLibs.srcDirs("src/main/cpp/jni") // Path to the directory containing libonnxruntime.so
+        }
+    }
+
+    buildFeatures {
+        prefab = true // Enable prefab if using dependencies for native libraries
+    }
+    externalNativeBuild {
+        cmake {
+            path = file("src/main/cpp/CMakeLists.txt")
         }
     }
     compileOptions {
@@ -52,14 +70,15 @@ android {
 
 dependencies {
 
+    implementation("com.microsoft.onnxruntime:onnxruntime-android:1.20.0")
     implementation(libs.tensorflow.lite)
     implementation(libs.tensorflow.lite.gpu)
 //    implementation(libs.tensorflow.lite.support)
 //    implementation(libs.tensorflow.lite.metadata)
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.1")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.1")
-    implementation("org.tensorflow:tensorflow-lite-support:0.4.3")
-    implementation("org.tensorflow:tensorflow-lite-metadata:0.4.3")
+    implementation(libs.kotlinx.coroutines.core)
+    implementation(libs.kotlinx.coroutines.android)
+    implementation(libs.tensorflow.lite.support.v043)
+    implementation(libs.tensorflow.lite.metadata.v043)
     //implementation("org.tensorflow:tensorflow-lite-task-audio:0.4.0")
     implementation(libs.jtransforms)
     implementation(libs.androidx.core.ktx)

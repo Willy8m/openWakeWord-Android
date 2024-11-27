@@ -14,9 +14,6 @@ import java.nio.ByteBuffer
 
 class MainViewModel : ViewModel() {
 
-    private var _image: MutableLiveData<Bitmap> = MutableLiveData(null)
-    val image: LiveData<Bitmap> = _image
-
     private var _predictionScores: MutableLiveData<FloatArray> = MutableLiveData(null)
     val predictionScores: LiveData<FloatArray> = _predictionScores
 
