@@ -1,0 +1,7 @@
+# ninja log v5
+1	82	7539679195424329	CMakeFiles/native-lib.dir/native-lib.cpp.o	1bd704de7852ec0e
+83	387	7539679198442869	C:/Users/gbartag/AndroidStudioProjects/KWS/app/build/intermediates/cxx/Debug/68715j1n/obj/armeabi-v7a/libnative-lib.so	11296de58a0397a
+1	23	0	clean	aa7dcb72c5fa7d3a
+3	270	7539693033926075	build.ninja	b2976ee86ceca912
+1	161	7539693039535361	CMakeFiles/native-lib.dir/native-lib.cpp.o	1bd704de7852ec0e
+1	23	0	clean	aa7dcb72c5fa7d3a

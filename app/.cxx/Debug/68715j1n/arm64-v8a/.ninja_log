@@ -1,0 +1,5 @@
+# ninja log v5
+1	79	7539693855865194	CMakeFiles/native-lib.dir/native-lib.cpp.o	54f0b31cff1d16ea
+0	27	0	clean	aa7dcb72c5fa7d3a
+1	199	7539694862882105	C:/Users/gbartag/AndroidStudioProjects/KWS/app/build/intermediates/cxx/Debug/68715j1n/obj/arm64-v8a/libnative-lib.so	7c47fcc01373cf2a
+0	210	7539696406765001	C:/Users/gbartag/AndroidStudioProjects/KWS/app/build/intermediates/cxx/Debug/68715j1n/obj/arm64-v8a/libnative-lib.so	3efe69aa4744288b

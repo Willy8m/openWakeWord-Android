@@ -1,0 +1,1 @@
+C:\Users\gbartag\AndroidStudioProjects\KWS\app\src\main\cpp\CMakeLists.txt
