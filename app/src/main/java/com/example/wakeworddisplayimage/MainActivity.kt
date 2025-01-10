@@ -35,7 +35,6 @@ import androidx.compose.ui.graphics.Color
 
 class MainActivity : ComponentActivity() {
 
-    private lateinit var mediaRecorder : MediaRecorder
     companion object {
         init {
             System.loadLibrary("native-lib")

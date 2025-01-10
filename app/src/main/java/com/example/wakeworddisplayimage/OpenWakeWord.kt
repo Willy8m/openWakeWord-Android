@@ -15,7 +15,7 @@ import android.widget.Toast
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
-import com.example.wakeworddisplayimage.ml.AlexaCa2500015000100
+import com.example.wakeworddisplayimage.ml.Alexa06
 import com.example.wakeworddisplayimage.ml.EmbeddingModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -32,15 +32,17 @@ import java.util.LinkedList
 class OpenWakeWord (private val context: MainActivity, private val viewModel: MainViewModel) {
 
     // Configuration
+    private val modelThreshold = 0.3
+    private val verifierThreshold = 0.0
+    private var maxPatience = 16  // blocks of 1280 samples
     private val gain = 100
-    private var maxPatience = 20
     private val audioBufferSizeInBytes = 1280 * 4
     private val maxScores = 1
 
     // Models
     private lateinit var melspecOnnx: OrtSession
     private lateinit var embeddingModel : EmbeddingModel
-    private lateinit var wakewordModel : AlexaCa2500015000100
+    private lateinit var wakewordModel : Alexa06
     private lateinit var verifierOnnx : OrtSession
 
     // Buffers
@@ -79,7 +81,7 @@ class OpenWakeWord (private val context: MainActivity, private val viewModel: Ma
 
             melspecOnnx = env.createSession(melspecModelPath)
             embeddingModel = EmbeddingModel.newInstance(context)
-            wakewordModel = AlexaCa2500015000100.newInstance(context)
+            wakewordModel = Alexa06.newInstance(context)
             verifierOnnx = env.createSession(verifierModelPath)
 
         } catch (ex : Exception) {
@@ -141,10 +143,10 @@ class OpenWakeWord (private val context: MainActivity, private val viewModel: Ma
                     {
                         patience -= 1
                     }
-                    else if (confidence[0] > 0.35 && patience == 0)
+                    else if (confidence[0] > modelThreshold && patience == 0)
                     {
                         verifierScore = verifierOnnxPredict(embeddingBuffer)
-                        if (verifierScore > 0.35)
+                        if (verifierScore > verifierThreshold)
                         {
                             patience = maxPatience  //  Number of frames to wait until next detection
                             withContext(Dispatchers.Main) { viewModel.addCount() }
@@ -161,6 +163,10 @@ class OpenWakeWord (private val context: MainActivity, private val viewModel: Ma
             }
         }.start()
     }
+
+    // #########################
+    //  --- Helper methods ---
+    // #########################
 
     private fun bufferRawData()
     {
