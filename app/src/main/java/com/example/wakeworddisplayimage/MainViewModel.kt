@@ -19,4 +19,25 @@ class MainViewModel : ViewModel() {
     fun addCount() {
         _wakewordCount.value = _wakewordCount.value?.plus(1)
     }
+
+    private var _audioVolume: MutableLiveData<Float> = MutableLiveData(0f)
+    val audioVolume: LiveData<Float> = _audioVolume
+
+    fun updateAudioVolume(audio: FloatArray) {
+        val audioVolume: Float = findMax(audio)
+        _audioVolume.value = audioVolume
+    }
+
+    fun findMax(array: FloatArray?): Float {
+        require(!(array == null || array.isEmpty())) { "Array must not be null or empty" }
+
+        var max = array[0]
+        for (num in array) {
+            if (num > max) {
+                max = num
+            }
+        }
+        return max
+    }
+
 }

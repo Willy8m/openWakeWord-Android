@@ -16,7 +16,10 @@ import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
 import com.example.wakeworddisplayimage.ml.Alexa06
+import com.example.wakeworddisplayimage.ml.Alexa07
 import com.example.wakeworddisplayimage.ml.EmbeddingModel
+import com.example.wakeworddisplayimage.ml.Maia02
+import com.example.wakeworddisplayimage.ml.Maia03
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -35,14 +38,14 @@ class OpenWakeWord (private val context: MainActivity, private val viewModel: Ma
     private val modelThreshold = 0.3
     private val verifierThreshold = 0.0
     private var maxPatience = 16  // blocks of 1280 samples
-    private val gain = 100
+    private val gain = 10
     private val audioBufferSizeInBytes = 1280 * 4
     private val maxScores = 1
 
     // Models
     private lateinit var melspecOnnx: OrtSession
     private lateinit var embeddingModel : EmbeddingModel
-    private lateinit var wakewordModel : Alexa06
+    private lateinit var wakewordModel : Alexa07
     private lateinit var verifierOnnx : OrtSession
 
     // Buffers
@@ -81,7 +84,7 @@ class OpenWakeWord (private val context: MainActivity, private val viewModel: Ma
 
             melspecOnnx = env.createSession(melspecModelPath)
             embeddingModel = EmbeddingModel.newInstance(context)
-            wakewordModel = Alexa06.newInstance(context)
+            wakewordModel = Alexa07.newInstance(context)
             verifierOnnx = env.createSession(verifierModelPath)
 
         } catch (ex : Exception) {
@@ -135,6 +138,8 @@ class OpenWakeWord (private val context: MainActivity, private val viewModel: Ma
                 val floatsRead = audioRecord?.read(newAudioData, offsetInFloats, sizeInFloats, AudioRecord.READ_BLOCKING)
                 if (floatsRead == 1280)
                 {
+
+
                     bufferRawData()
                     bufferMelspec()
                     bufferEmbeddings()
@@ -168,11 +173,12 @@ class OpenWakeWord (private val context: MainActivity, private val viewModel: Ma
     //  --- Helper methods ---
     // #########################
 
-    private fun bufferRawData()
+    private suspend fun bufferRawData()
     {
         for (i in newAudioData.indices) {
             newAudioData[i] = gain * newAudioData[i]
         }
+        withContext(Dispatchers.Main) {viewModel.updateAudioVolume(newAudioData)}
         System.arraycopy(rawDataBuffer, 1280, rawDataBuffer, 0, 480)  // Move old data to the start
         System.arraycopy(newAudioData, 0, rawDataBuffer, 480, 1280)  // Put new data at the end
     }
