@@ -15,11 +15,8 @@ import android.widget.Toast
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
-import com.example.wakeworddisplayimage.ml.Alexa06
-import com.example.wakeworddisplayimage.ml.Alexa07
 import com.example.wakeworddisplayimage.ml.EmbeddingModel
-import com.example.wakeworddisplayimage.ml.Maia02
-import com.example.wakeworddisplayimage.ml.Maia03
+import com.example.wakeworddisplayimage.ml.HolaAyud10
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -30,22 +27,24 @@ import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.nio.FloatBuffer
 import java.util.LinkedList
+import kotlin.math.sqrt
+import kotlin.math.min
 
 
 class OpenWakeWord (private val context: MainActivity, private val viewModel: MainViewModel) {
 
     // Configuration
-    private val modelThreshold = 0.3
+    private val modelThreshold = 0.05f
     private val verifierThreshold = 0.0
     private var maxPatience = 16  // blocks of 1280 samples
-    private val gain = 10
+    private val gain = 100f
     private val audioBufferSizeInBytes = 1280 * 4
     private val maxScores = 1
 
     // Models
     private lateinit var melspecOnnx: OrtSession
     private lateinit var embeddingModel : EmbeddingModel
-    private lateinit var wakewordModel : Alexa07
+    private lateinit var wakewordModel : HolaAyud10
     private lateinit var verifierOnnx : OrtSession
 
     // Buffers
@@ -72,9 +71,9 @@ class OpenWakeWord (private val context: MainActivity, private val viewModel: Ma
             }
         }
 
-    // ###############################
+    // #############################
     //  --- Initialize services ---
-    // ###############################
+    // #############################
 
     private fun initializeModels() {
         try {
@@ -84,7 +83,7 @@ class OpenWakeWord (private val context: MainActivity, private val viewModel: Ma
 
             melspecOnnx = env.createSession(melspecModelPath)
             embeddingModel = EmbeddingModel.newInstance(context)
-            wakewordModel = Alexa07.newInstance(context)
+            wakewordModel = HolaAyud10.newInstance(context)
             verifierOnnx = env.createSession(verifierModelPath)
 
         } catch (ex : Exception) {
@@ -118,39 +117,83 @@ class OpenWakeWord (private val context: MainActivity, private val viewModel: Ma
     }
 
     // ###################
+    //   --- Helpers ---
+    // ###################
+
+    fun playSound()
+    {
+        if (mediaPlayer.isPlaying) {mediaPlayer.stop(); mediaPlayer.prepare()}
+        mediaPlayer.start()
+    }
+
+    fun addScore(newScore: Float)
+    {
+        if (scoreQueue.size == maxScores) {
+            scoreQueue.pollFirst() // Remove the oldest score
+        }
+        scoreQueue.add(newScore) // Add the new score
+        averagedConfidence = scoreQueue.average().toFloat()
+    }
+
+    fun getGain(buffer: FloatArray, rmsObjective: Float = 0.1f, prevGain : Float = 1f): Float {
+
+        // Calculate RMS
+        val sumSquares = buffer.fold(0.0f) { acc, sample -> acc + sample * sample }
+        val rms = sqrt(sumSquares / buffer.size)
+
+        // Compute raw gain factor
+        var g = rmsObjective / (rms + 1e-5f)
+
+        // Calculate gain with clamping
+        val minGain = 0.1f
+        val maxGain = 30.0f
+        g = g.coerceIn(minGain, maxGain)
+
+        // Smooth transition using EMA (Exponential Moving Average)
+        return 0.4f * prevGain + 0.6f * g
+    }
+
+    // ###################
     //  --- Main loop ---
     // ###################
 
     fun startListeningForKeyword()
     {
+        var patience = 0
+        var prevGain = 1f
+
         initializeModels()
         val audioRecord = initializeMicrophone()
         audioRecord?.startRecording()
+
         val scope = CoroutineScope(Dispatchers.IO) // Scope for background tasks
-        var patience = 0
-        var verifierScore: Float
         scope.launch()
         {
             while (isListening)
             {
-                val sizeInFloats = 1280
                 val offsetInFloats = 0
+                val sizeInFloats = 1280
                 val floatsRead = audioRecord?.read(newAudioData, offsetInFloats, sizeInFloats, AudioRecord.READ_BLOCKING)
                 if (floatsRead == 1280)
                 {
+                    // dynamic gain
+                    prevGain = getGain(newAudioData, prevGain=prevGain, rmsObjective=0.05f)
 
-
-                    bufferRawData()
+                    // buffer data
+                    bufferRawData(gain=prevGain)
                     bufferMelspec()
                     bufferEmbeddings()
+
+                    // get prediction
                     getWakeWordPrediction(embeddingBuffer)
+
                     if (patience > 0)
                     {
                         patience -= 1
                     }
                     else if (confidence[0] > modelThreshold && patience == 0)
                     {
-                        verifierScore = verifierOnnxPredict(embeddingBuffer)
+                        val verifierScore = verifierOnnxPredict(embeddingBuffer)
                         if (verifierScore > verifierThreshold)
                         {
                             patience = maxPatience  //  Number of frames to wait until next detection
@@ -170,10 +213,10 @@ class OpenWakeWord (private val context: MainActivity, private val viewModel: Ma
     }
 
     // #########################
-    //  --- Helper methods ---
+    // --- Main Loop Helpers ---
     // #########################
 
-    private suspend fun bufferRawData()
+    private suspend fun bufferRawData(gain: Float)
     {
         for (i in newAudioData.indices) {
             newAudioData[i] = gain * newAudioData[i]
@@ -332,20 +375,5 @@ class OpenWakeWord (private val context: MainActivity, private val viewModel: Ma
             e.printStackTrace()
             return null
         }
-    }
-
-    fun addScore(newScore: Float)
-    {
-        if (scoreQueue.size == maxScores) {
-            scoreQueue.pollFirst() // Remove the oldest score
-        }
-        scoreQueue.add(newScore) // Add the new score
-        averagedConfidence = scoreQueue.average().toFloat()
-    }
-
-    fun playSound ()
-    {
-        if (mediaPlayer.isPlaying) {mediaPlayer.stop(); mediaPlayer.prepare()}
-        mediaPlayer.start()
     }
 }

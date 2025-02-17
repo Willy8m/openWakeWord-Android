@@ -15,7 +15,7 @@ import android.widget.Toast
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
-import com.example.wakeworddisplayimage.ml.ModelV11
+import com.example.wakeworddisplayimage.ml.HolaAyud01
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -79,7 +79,7 @@ class WakeWordFromScratchVersion(private val context: MainActivity, private val 
 
     private var isListening = true
     private var isRecording = false
-    private lateinit var model : ModelV11
+    private lateinit var model : HolaAyud01
     private lateinit var audioRecord: AudioRecord
     private val sampleRate = 16000 // Sample rate in Hz
     private val channel = AudioFormat.CHANNEL_IN_MONO
@@ -104,7 +104,7 @@ class WakeWordFromScratchVersion(private val context: MainActivity, private val 
 
     fun initializeModel() {
         try {
-            model = ModelV11.newInstance(context)
+            model = HolaAyud01.newInstance(context)
         } catch (ex : Exception) {
             Toast.makeText(context, "Failed to load model", Toast.LENGTH_SHORT).show()
             throw ex
